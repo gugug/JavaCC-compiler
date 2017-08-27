@@ -1,0 +1,446 @@
+/**
+ * JavaCC template file created by SF JavaCC plugin 1.5.28+ wizard for JavaCC 1.5.0+
+ */
+options
+{
+  static = true;
+
+  LOOKAHEAD= 3;
+}
+
+PARSER_BEGIN(MyNewGrammar)
+package cp.grammer;
+
+public class MyNewGrammar
+{
+  public static void main(String args []) throws ParseException
+  {
+    MyNewGrammar parser = new MyNewGrammar(System.in);
+    while (true)
+    {
+      System.out.println("Reading from standard input...");
+      System.out.println("\u8f93\u5165:");
+      try
+      {
+        switch (MyNewGrammar.one_line())
+        {
+          case 0 : 
+          System.out.println("OK.");
+          break;
+          case 1 : 
+          System.out.println("Goodbye.");
+          break;
+          default : 
+          break;
+        }
+      }
+      catch (Exception e)
+      {
+        System.out.println("NOK.");
+        System.out.println(e.getMessage());
+        MyNewGrammar.ReInit(System.in);
+      }
+      catch (Error e)
+      {
+        System.out.println("Oops.");
+        System.out.println(e.getMessage());
+        break;
+      }
+    }
+  }
+}
+
+PARSER_END(MyNewGrammar)
+
+SKIP :
+{
+  " "
+| "\r"
+| "\t"
+| "\n"
+}
+
+TOKEN : /* 定义运算符 */
+{
+  < PLUS : "+" >
+| < MINUS : "-" >
+| < MULTIPLY : "*" >
+| < DIVIDE : "/" >
+| < POW : "**" > //python次方运算
+| < FALSE : "False" >
+| < TRUE : "True" >
+| < EEQUALS : "==" >
+| < EQUALS : "=" >
+| < COLON : ":" >
+| < BIGGER : ">" >
+| < SMALLER : "<" >
+| < MORE_EQUAL : ">=" >
+| < LESS_EQUAL : "<=" >
+| < NOT : "!" >
+| < COMMA : "," >
+}
+
+TOKEN : /* 定义保留字 */
+{
+  < IF : "if" >
+| < ELSE : "else" >
+| < ELIF : "elif" >
+| < PRINT : "print" > //输出
+| < CLASS : "class" >
+| < BREAK : "break" >
+| < DEF : "def" >
+| < WHILE : "while" >
+| < LPARENT : "(" >
+| < RPARENT : ")" >
+| < LBRACE : "{" >
+| < RBRACE : "}" >
+| < LARRAY : "[" >
+| < RARRAY : "]" >
+}
+
+TOKEN : /* 定义数值与变量 */
+{
+  < #DIGIT : [ "0"-"9" ] >
+| < CONSTANT : (< DIGIT >)+ >
+| < DOUBLEDIGIT : < CONSTANT > "." < CONSTANT > >
+| < #LETTER :
+    [ "A"-"Z" ]
+  | [ "a"-"z" ] >
+| < VARIABLE :
+    (
+      < LETTER >
+    | "_"
+    )
+    (
+      < LETTER >
+    | < DIGIT >
+    | "_"
+    )* >
+| < STRING :	
+    (
+      "\"" (~[ "\"" ])* "\""
+    )
+  |
+    (
+      "\'" (~[ "\"" ])* "\'"
+    ) >
+}
+
+TOKEN : /*定义数据结构*/
+{
+  //  < TUPLE :
+  //    < LPARENT >
+  //    (
+  //      (
+  //        (
+  //          < STRING >
+  //        | < CONSTANT >
+  //        )
+  //        < COMMA >
+  //      )*
+  //      (
+  //        < STRING >
+  //      | < CONSTANT >
+  //      )
+  //    )*
+  //    < RPARENT >
+  //     >	 //元组()
+  //|
+  < SPILIT :
+    < LARRAY >
+    (
+      < CONSTANT >
+    | < VARIABLE >
+    )?
+    < COLON >
+    (
+      < CONSTANT >
+    | < VARIABLE >
+    )?
+    < RARRAY > 
+  >
+| < INDEX :
+    < LARRAY >
+    (
+      < CONSTANT >
+    | < VARIABLE >
+    )
+    < RARRAY > 
+  >
+| < LIST :
+    < LARRAY >
+    (
+      (
+        < STRING >
+      | (< MINUS >)? < CONSTANT >
+      | < VARIABLE >
+      )
+      (
+        < COMMA >
+        (
+          < STRING >
+        | (< MINUS >)? < CONSTANT >
+        | < VARIABLE >
+        )
+      )*
+    )?
+    < RARRAY > > //序列[]
+| < DICTIONARY :
+    < LBRACE >
+    (
+      (
+        (
+          < STRING >
+        | < CONSTANT >
+        )
+        < COLON >
+        (
+          < STRING >
+        | < CONSTANT >
+        )
+        < COMMA >
+      )*
+      (
+        (
+          < STRING >
+        | < CONSTANT >
+        )
+        < COLON >
+        (
+          < STRING >
+        | < CONSTANT >
+        )
+      )
+    )*
+    < RBRACE > >
+}
+
+int one_line() :
+{}
+{
+  (
+    program()
+  | function()
+  )
+  ";"
+  {
+    return 0;
+  }
+| ";"
+  {
+    return 1;
+  }
+}
+
+void program() : //一段程序
+{}
+{
+  (
+    sentence()
+  )+
+}
+
+void sentence() : //任意语句(可在此添加所需语句)
+{}
+{
+  (
+    assignment()
+  | judgement()
+  | output()
+  | condition()
+  | function()
+  | < BREAK >
+  | variable_or_function()
+  )
+}
+
+void sum() :
+{}
+{
+  unary()
+  (
+    (
+      < PLUS >
+    | < MINUS >
+    | < MULTIPLY >
+    | < DIVIDE >
+    | < POW >
+    )
+    unary()
+  )*
+}
+
+void unary() : //识别元素单元
+{}
+{
+  (< MINUS >)? element()
+}
+
+void element() : //识别整数浮点数或者变量，或者运算表达式
+{}
+{
+  < CONSTANT >
+  //| < LPARENT > sum() < RPARENT >
+| < DOUBLEDIGIT >
+| variable_or_function()
+}
+
+void assignment() : //赋值语句
+{}
+{
+  < VARIABLE > < EQUALS >
+  (
+    //    < TUPLE >
+    //  | 
+    < LIST >
+  | 
+    < DICTIONARY >
+  | 
+    < STRING >
+  | 
+    sum()
+    //  | 
+    //    (< VARIABLE >) //切片
+  )
+}
+
+void compare() : //比较语句
+{}
+{
+  < FALSE >
+| < TRUE >
+| sum()
+  (
+    comparison_symbol() sum()
+  )*
+}
+
+void comparison_symbol() : //定义比较符号
+{}
+{
+  < BIGGER >
+| < EEQUALS >
+| < SMALLER >
+| < MORE_EQUAL >
+| < LESS_EQUAL >
+}
+
+void output() : //输出语句 可以输出print 变量 或者 print 运算表达式
+{}
+{
+  < PRINT >
+  (
+    < FALSE >
+  | < TRUE >
+  | 
+    sum()
+    (
+      comparison_symbol() sum()
+    )*
+  | < STRING >
+  )?
+}
+
+//void display():
+//{}
+//{
+//	(
+//		<VARIABLE><LARRAY>< CONSTANT><RARRAY>//下标索引
+//	)
+//	|
+//	(
+//		<VARIABLE><LARRAY>< CONSTANT><COLON>< CONSTANT><RARRAY>//切片
+//	)
+//	|
+//	< VARIABLE>
+//}
+void judgement() : //判断语句
+{}
+{
+  < IF >
+  compare() 
+  < COLON >
+  (
+    sentence()
+  )+
+  (
+    (
+      < ELIF > 
+      compare() 
+      < COLON >
+      (
+        sentence()
+      )+
+    )?
+    < ELSE > 
+    < COLON >
+    (
+      sentence()
+    )+
+  )?
+}
+
+void condition() : //while
+{}
+{
+  < WHILE > 
+  compare() 
+  < COLON >
+  (
+    sentence()
+  )+
+}
+
+void function() : //识别函数
+{
+}
+{
+  < DEF > < VARIABLE > 
+  < LPARENT >
+  (
+    (
+      (
+      < VARIABLE >
+      ) 
+      < COMMA >
+    )*
+    (
+    < VARIABLE >
+    )
+  )*
+  < RPARENT > 
+  < COLON >
+  (
+    program()
+  )
+}
+
+void variable_or_function() :
+{}
+{
+  < VARIABLE >
+  (
+    (
+      < LPARENT >
+      (
+        (
+          (
+            < VARIABLE >
+          | < CONSTANT >
+          | < DOUBLEDIGIT >
+          )
+          < COMMA >
+        )*
+        (
+          < VARIABLE >
+        | < CONSTANT >
+        | < DOUBLEDIGIT >
+        )
+      )*
+      < RPARENT >
+    )
+  | 
+    < INDEX >
+  | < SPILIT >
+  )?
+}
