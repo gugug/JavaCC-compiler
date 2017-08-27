@@ -1,0 +1,444 @@
+options {
+	STATIC = false ;
+	LOOKAHEAD=3;
+	FORCE_LA_CHECK=true;
+}
+PARSER_BEGIN(MyNewGrammar)
+package cp.grammer2;
+import java.io.PrintStream ;
+import java.util.HashMap;
+
+public class MyNewGrammar {
+  	HashMap<String, String> SymbolMap = new HashMap<String, String>();
+	public static void main( String[] args ) throws ParseException, TokenMgrError, NumberFormatException {
+		while (true)
+	    {
+	      MyNewGrammar parser = new MyNewGrammar( System.in ) ;
+	      System.out.println("input:");
+	      try
+	      {	        
+	        parser.Start();
+	        parser.ReInit(System.in);
+	      }
+	      catch (Exception e)
+	      {
+	        System.out.println(e.getMessage());
+	        parser.ReInit(System.in);
+	      }
+	      catch (Error e)
+	      {
+	        System.out.println("Oops.");
+	        System.out.println(e.getMessage());
+	        break;
+	      }
+	    }
+	}
+	
+}
+PARSER_END(MyNewGrammar)
+
+SKIP : { " "|"\t" }
+//SKIP : { " " |"\n" | "\r" | "\r\n"}
+
+TOKEN:/*换行符*/
+{
+  <EOL:"\n" | "\r" | "\r\n">
+  
+}
+
+TOKEN : /* 定义运算符 */
+{
+  < PLUS : "+" >
+| < MINUS : "-" >
+| < MULTIPLY : "*" >
+| < DIVIDE : "/" >
+| < POW: "**"> 
+|  < FALSE: "False">
+|  < TRUE: "True">
+| < EEQUALS:"==">
+| <EQUALS: "=" >
+| < COLON:":">
+| <BIGGER:">" >
+|  <SMALLER:"<" >
+| <MORE_EQUAL: ">=">
+| <LESS_EQUAL: "<=">
+| < NOT : "!" >
+| < COMMA : ",">
+| < QUESTION_MARK:"?">
+}
+
+TOKEN: /* 定义保留字 */
+{
+  < IF: "if" >
+| < ELSE:"else">
+| < ELIF:"elif">
+| < PRINT:"print"> //输出
+| < CLASS : "class">
+| < DEF : "def">
+| < WHILE : "while">
+| < FOR:"for">
+| < IN:"in">
+| < RANGE:"range">
+| < LEN:"len">
+| < LPARENT: "(" >
+| < RPARENT: ")" >
+| < LBRACE : "{" >
+| < RBRACE : "}" >
+| < LARRAY : "[" >
+| < RARRAY : "]" >
+| < PREVIOUS : "$" >
+}
+
+TOKEN : /* 定义数值与变量 */
+{
+  < DIGITS : (["0"-"9"])+ >
+| <NUMBER:<DIGITS>"."<DIGITS>|<DIGITS>"."|"."<DIGITS>> 	/*浮点型*/
+| <#LETTER : [ "A"-"Z" ]|[ "a"-"z" ]>
+| <VARIABLE : (< LETTER>|"_")+(< LETTER >|< DIGITS>|"_")*>
+| < STRING :	
+    (
+      "\"" (~[ "\"" ])* "\""
+    )
+  |
+    (
+      "\'" (~[ "\"" ])* "\'"
+    ) >
+
+}
+
+
+void Start():
+{
+  String output="";
+}
+{
+	(
+		LOOKAHEAD(10)
+		  output=print()<EOL>{System.out.println(output);}
+		| output=calculator()<EOL>{System.out.println(output);}
+		| whileStatement()<EOL>
+		| ifElseStatement()<EOL>
+		| forStatement()<EOL>
+		| assignment()<EOL>
+		| output=compareStatement()<EOL>{System.out.println(output);}
+
+		
+	)+";"
+}
+
+/*************************************/
+/*               四则运算                                            */
+/*************************************/
+String calculator() throws NumberFormatException :
+{
+	double previousValue=0.0;
+}
+{
+	(
+		previousValue = Expression(previousValue)
+		{
+		  	return Double.toString(previousValue);
+		}
+	)+
+}
+
+double Expression(double previousValue) throws NumberFormatException :
+{
+	double i ;
+	double value ;
+}
+{
+	value = Term(previousValue)
+	(
+		<PLUS>
+		i = Term(previousValue)
+		{ value += i ; }
+	|
+		<MINUS>
+		i = Term(previousValue)
+		{ value -= i ; }
+	)*
+	{ return value ; }
+}
+
+double Term(double previousValue) throws NumberFormatException :
+{
+	double i ;
+	double value ;
+}
+{
+	value = Primary(previousValue)
+	(
+		<MULTIPLY>
+		i = Primary(previousValue)
+		{ value *= i ; }
+	|
+		<DIVIDE>
+		i = Primary(previousValue)
+		{ value /= i ; }
+	)*
+	{ return value ; }
+}
+
+
+
+double Primary(double previousValue) throws NumberFormatException :
+{
+	Token t=null ;
+	double d ;
+}
+{
+  	t=<DIGITS>
+	{ return Double.parseDouble( t.image ) ; }
+|
+	t=<NUMBER>
+	{ return Double.parseDouble( t.image ) ; }
+|
+	t=<PREVIOUS>
+	{ return previousValue ; }
+|
+	t=<LPARENT> d=Expression(previousValue) <RPARENT>
+	{ return d ; }
+|
+	t=<MINUS> d=Primary(previousValue)
+	{ return -d ; }
+|
+	t=<VARIABLE>
+	{  
+	  	return Double.parseDouble(SymbolMap.get(t.image));
+	}
+}
+
+/************************************/
+/*            if-elif-else语句                      */
+/************************************/
+void ifElseStatement():
+{
+  	boolean bool=false;
+  	double i=0.0;
+  	String value="";
+}
+{
+	<IF>
+	bool=conditionStatement()
+	<COLON><LBRACE><EOL>  
+	(
+		value=print()	
+		{
+     		if(bool==true) {
+     	  		System.out.println(value);
+     		}
+   		}
+   		<EOL>
+	)+
+  	<RBRACE>
+  	(
+		(
+    		<ELIF>
+    		bool=conditionStatement()
+    		<COLON><LBRACE><EOL>			  
+			(
+		  		value=print()
+				{
+			     	if(bool==true) {
+			     	  	System.out.println(value);
+			     	}
+   				}
+   				<EOL>
+   			)+
+	  		<RBRACE>
+    	)?
+    	<ELSE><COLON><LBRACE><EOL>		
+		(
+			value=print()
+			{
+				if(bool==false) {
+			     	System.out.println(value);
+				}
+   			}
+   			<EOL>
+   		)+		
+		<RBRACE>
+  	)?
+}
+
+/************************************/
+/*              while语句                                     */
+/************************************/
+void whileStatement()://while
+{
+  	boolean bool=false;
+  	String value="";
+}
+{
+	<WHILE>
+	bool=conditionStatement()
+	<COLON><LBRACE><EOL>
+	(
+		value=print()
+		{
+			while(bool==true) {
+				System.out.println(value);
+			}
+		}
+		<EOL>
+	)+	
+    <RBRACE>
+}
+
+/************************************/
+/*              for循环                                           */
+/************************************/
+void forStatement():
+{
+  	
+	String value="";
+	Token num1 =null;
+	Token num2 =null;
+}
+{
+	<FOR><VARIABLE><IN><RANGE><LPARENT>
+	num1=<DIGITS>
+	<COMMA>
+	num2=<DIGITS>
+	<RPARENT><COLON><LBRACE><EOL> 
+	(
+//	  	(	    
+			value=print()
+			{
+			  	for(int i =Integer.parseInt(num1.image);i<Integer.parseInt(num2.image);i++) { 
+					System.out.println(value);
+				}									
+			}
+			<EOL>
+//		)
+//		|
+//		(
+//		  	assignment()<EOL>	
+//		)
+	)+
+	<RBRACE>
+}
+
+/************************************/
+/*              比较大小                                           */
+/************************************/
+/*
+*可以是：运算表达式和运算表达式比较
+*变量和运算表达式比较
+*返回类型是"true"或"false"
+*/
+String compareStatement(): 
+{
+	String t="";
+	String i="";
+	String j="";
+	Token token_i=null;
+	Token token_j=null;
+}
+{
+  	(	LOOKAHEAD(3)
+  	    i=calculator()
+	 	| token_i=<VARIABLE> { i=SymbolMap.get(token_i.image);}
+	)	
+	  	t=comparison_symbol()	
+  	(	LOOKAHEAD(2)
+  	  	j=calculator()
+	 	| token_j=<VARIABLE> { j=SymbolMap.get(token_j.image);}
+	)	
+	  	{	
+			if(t.equals("<"))
+				{ return Boolean.toString(Double.parseDouble(i)<Double.parseDouble(j)) ; }
+			else if(t.equals("=="))
+				{ return Boolean.toString(Double.parseDouble(i)==Double.parseDouble(j)); }
+			else if(t.equals(">"))
+				{ return Boolean.toString(Double.parseDouble(i)>Double.parseDouble(j)); }
+			else if(t.equals(">="))
+				{ return Boolean.toString(Double.parseDouble(i)>=Double.parseDouble(j)); }
+			else if(t.equals("<="))
+				{ return Boolean.toString(Double.parseDouble(i)<=Double.parseDouble(j)); }
+	  	}
+//	)
+//	| 
+}
+
+String comparison_symbol(): //定义比较符号
+{
+  	String symbol="";
+}
+{
+  <BIGGER> {symbol=">";return symbol;}
+| <EEQUALS>{symbol="==";return symbol;}
+| <SMALLER>{symbol="<";return symbol;}
+| <MORE_EQUAL>{symbol=">=";return symbol;}
+| <LESS_EQUAL>{symbol="<=";return symbol;}
+}
+
+
+boolean conditionStatement()://判断的条件
+{
+   	String value;
+  	boolean bool;
+}
+{
+	(
+		LOOKAHEAD(3)
+  		  <FALSE>{ return false;}
+		| <TRUE>{ return true;}
+		| value=compareStatement(){return Boolean.parseBoolean(value);}
+		| value=calculator(){ return true;}
+	)
+}
+
+/************************************/
+/*              print语句                                      */
+/************************************/
+/*print 变量名*//*print 运算表达式*//*print 比较语句*//*print 数字*/
+/*print 包含变量名的运算表达式*/
+String print(): 
+{
+	String value="";
+	Token t;
+}
+{	
+	<PRINT>
+	(
+			LOOKAHEAD(3)
+		  t=<STRING>{ value=t.image;return value;}
+		| value=compareStatement(){ return value;}
+		 
+		| t=<VARIABLE>{value=SymbolMap.get(t.image);return value;} 		
+		| value=calculator(){ return value;} 
+		 
+		
+	)
+}
+
+
+/************************************/
+/*              赋值语句                                          */
+/************************************/
+/*只能赋值double型、计算式、string型*/
+void assignment():
+{
+  	Token variable_name=null;
+  	String variable_value="";
+  	Token variable_value2=null;
+}
+{
+	variable_name=<VARIABLE> 
+	<EQUALS>
+(	LOOKAHEAD(10)
+  	
+	 variable_value2=<STRING> {variable_value=variable_value2.image;}
+	|variable_value=calculator()
+)
+	{	
+	  	SymbolMap.put(variable_name.image,variable_value);
+//	  	System.out.println("variable_name:"+variable_name.image);
+//	  	System.out.println("variable_value:"+SymbolMap.get(variable_name.image));
+	}
+
+}
+
+
