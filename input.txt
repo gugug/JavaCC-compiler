@@ -1,0 +1,19 @@
+alist = [1,2,3,4,5,6]
+def test():
+	a = alist[1]
+	print a
+	b = alist[0:1]
+	print b
+	c = 3
+	print c
+	d = c
+	print d
+	e = alist[0:3]
+	print e
+	f = alist[:4]
+	print f
+	if d == c:
+		print "d==c"
+	if c>0:
+		print "c>0"
+test()
