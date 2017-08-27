@@ -1,0 +1,42 @@
+请在测试代码前阅读本说明文档。
+/*****************************************************************/
+实验环境说明：
+      编程语言： Java
+      实验环境： jre-1.7 或以上
+      运行环境： Windows 平台
+      需要用到的 Jar 包： Jython.jar（在Compiler文件夹里）
+
+构建项目环境：
+      需配置Jython.jar包的路径
+/*****************************************************************/
+代码结构：
+--cp.fileUtil包
+------FileTools.java
+------MyPrintStream.java
+--cp.grammar包
+------MyNewGrammar.java
+------MyNewGrammarContents.java
+------MyNewGrammarTokenManager.java
+------ParseException.java
+------SimpleCharStream.java
+------Token.java
+------TokenMgrError.java
+------MyNewGrammar.jj
+--cp.grammar2包 /*跟 cp.grammar 包的文件完全一致， MyNewGrammar.jj 内容不同*/
+--cp.jpy包
+------JPyUtil.java
+------TestPy.java
+--cp.ui包
+------NewJFrame.java
+------NewJFrame.form
+--cp.ui2包 /*跟 cp.ui2 包的文件完全一致， NewJFrame.java 内容不同*/
+/*****************************************************************/
+运行代码：
+-运行cp.ui包的NewJFrame.java，参考<语法1的测试样例.txt>里的测试样例，即可测试。
+-运行cp.ui2包的NewJFrame.java，参考<语法2的测试样例.txt>里的测试样例，即可测试。
+/*****************************************************************/
+代码说明：
+cp.grammar包中的MyNewGrammar.jj 就是语法1的词法、文法定义。cp.grammar包中的其他java文件都是由MyNewGrammar.jj文件编译后产生的派生文件。也可以运行cp.grammar包中的MyNewGrammar.java文件，直接在控制台测试语法。
+
+cp.grammar2包中的MyNewGrammar.jj 就是语法2的词法、文法定义。同理。
+/*****************************************************************/
